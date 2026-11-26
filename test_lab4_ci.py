@@ -34,3 +34,4 @@ def test_stock_is_non_negative():
 
 def test_product_names_not_empty():
     assert all(product["name"].strip() for product in load_sample_products())
+# Verify CI after source code modification
