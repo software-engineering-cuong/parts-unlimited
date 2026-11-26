@@ -1,0 +1,80 @@
+
+name: Lab 4 - CI CD Pipeline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pytest
+        run: python -m pip install pytest
+
+      - name: Run tests
+        run: |
+          python -m pytest -v test_lab4_ci.py
+
+      - name: Package application
+        run: |
+          mkdir -p package
+          cp test_lab4_ci.py package/
+          if [ -f main.py ]; then
+            cp main.py package/
+          fi
+
+      - name: Publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: parts-unlimited-package
+          path: package/
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to Windows
+    needs: build
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: parts-unlimited-package
+          path: package
+
+      - name: Deploy package locally
+        shell: powershell
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP "parts-unlimited-deploy"
+
+          New-Item -ItemType Directory -Force -Path $destination | Out-Null
+
+          Copy-Item -Path "package\*" -Destination $destination -Recurse -Force
+
+          Write-Host "Files deployed to: $destination"
+
+          Get-ChildItem $destination
+
+      - name: Verify deployment
+        shell: powershell
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP "parts-unlimited-deploy"
+
+          if (-not (Test-Path "$destination\test_lab4_ci.py")) {
+            throw "Deployment verification failed!"
+          }
+
+          Write-Host "Deployment verification successful!"
