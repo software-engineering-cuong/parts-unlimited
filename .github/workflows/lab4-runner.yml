@@ -1,0 +1,40 @@
+
+name: Lab 4 - Self Hosted Runner
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runner-test:
+    name: Verify Windows Runner
+    runs-on: [self-hosted, Windows, X64, lab4]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show computer information
+        shell: powershell
+        run: |
+          Write-Host "Runner name: $env:RUNNER_NAME"
+          Write-Host "Operating system: $env:RUNNER_OS"
+          Write-Host "Computer: $env:COMPUTERNAME"
+          Write-Host "Workspace: $env:GITHUB_WORKSPACE"
+
+      - name: Check Python
+        shell: powershell
+        run: |
+          $python = Get-Command python -ErrorAction SilentlyContinue
+          if ($python) {
+            python --version
+          } else {
+            Write-Host "Python is not installed or not available in PATH."
+          }
+
+      - name: Complete runner test
+        shell: powershell
+        run: |
+          Write-Host "Self-hosted runner test completed successfully!"
